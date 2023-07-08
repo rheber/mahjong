@@ -3,7 +3,7 @@ use regex::Regex;
 /**
  * A suit.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Shoku {
     Manzu,
     Pinzu,
@@ -13,7 +13,7 @@ pub enum Shoku {
 /**
  * A wind.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Kazehai {
     Ton,
     Nan,
@@ -24,7 +24,7 @@ pub enum Kazehai {
 /**
  * A dragon.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Sangenpai {
     Chun,
     Haku,
@@ -34,7 +34,7 @@ pub enum Sangenpai {
 /**
  * A number tile.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Suupai {
     /**
      * The suit.
@@ -55,7 +55,7 @@ pub struct Suupai {
 /**
  * An honor tile.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Jihai {
     Kazehai(Kazehai),
     Sangenpai(Sangenpai),
@@ -64,7 +64,7 @@ pub enum Jihai {
 /**
  * A tile.
  */
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Pai {
     Jihai(Jihai),
     Suupai(Suupai),
@@ -111,6 +111,57 @@ pub fn is_tilestring(candidate: &str) -> bool {
         Some(_) => true,
         None => false,
     };
+}
+
+/**
+ * Converts a tilestring to tiles.
+ */
+pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
+    if !is_tilestring(tilestring) {
+        return None;
+    }
+
+    let re = Regex::new(r"([0-9]+[mwcpdsb])|([1-7]+[zh])").unwrap();
+    let clumps = re.find_iter(tilestring);
+    let clump_pair_lists = clumps.map(|clump| {
+        let mut clump_string = clump.as_str().to_owned();
+        let letter = clump_string.pop().unwrap();
+        let digits = clump_string.chars();
+        let pairs = digits.map(move |digit| (digit, letter));
+        pairs.collect::<Vec<(char, char)>>()
+    });
+    let clump_pairs = clump_pair_lists.flatten();
+
+    fn clump_pair_to_pai(dl: (char, char)) -> Option<Pai> {
+        let (digit, letter) = dl; 
+        if letter == 'z' || letter == 'h' {
+            match digit {
+                '1' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Ton))),
+                '2' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Nan))),
+                '3' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa))),
+                '4' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Pei))),
+                '5' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun))),
+                '6' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Haku))),
+                '7' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu))),
+                _ => return None,
+            }
+        } else {
+            let shoku = match letter {
+                'm' | 'w' | 'c' => Shoku::Manzu,
+                'p' | 'd' => Shoku::Pinzu,
+                's' | 'b' => Shoku::Souzu,
+                _ => return None,
+            };
+            return Some(Pai::Suupai(Suupai {
+                shoku,
+                rank: if digit == '0' { 5 } else { i8::try_from(digit.to_digit(10).unwrap()).unwrap() },
+                akadora: digit == '0',
+            }));
+        }
+    }
+
+    let pais: Vec<Pai> = clump_pairs.map(|dl| clump_pair_to_pai(dl).unwrap()).collect();
+    return Some(pais);
 }
 
 #[cfg(test)]
@@ -191,5 +242,15 @@ mod tests {
     #[test]
     fn tilestrings_of_random_text_are_invalid() {
         assert_eq!(is_tilestring("helloworld"), false);
+    }
+
+    #[test]
+    fn converts_tilestrings_to_pais() {
+        let pais = tilestring_to_pais("111406p33377z789s").unwrap();
+        assert_eq!(pais.len(), 14);
+        assert_eq!(pais[0], Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 1, akadora: false }));
+        assert_eq!(pais[4], Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }));
+        assert_eq!(pais[10], Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu)));
+        assert_eq!(pais[13], Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }));
     }
 }
