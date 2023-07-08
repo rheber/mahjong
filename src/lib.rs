@@ -1,3 +1,5 @@
+use regex::Regex;
+
 /**
  * A suit.
  */
@@ -62,8 +64,22 @@ pub enum Pai {
     Suupai(Suupai),
 }
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+/**
+ * Whether the given candidate is a valid tilestring.
+ * m/w/c -> manzu
+ * p/d -> pinzu
+ * s/b -> souzu
+ * z/h -> jihai
+ * 0 -> red five
+ * 1z -> ton
+ * 5z -> chun
+ */
+pub fn is_tilestring(candidate: &str) -> bool {
+    let re = Regex::new(r"^(([0-9]+[mwcpdsb])|([1-7]+[zh]))*$").unwrap();
+    return match re.captures(candidate) {
+        Some(_) => true,
+        None => false,
+    };
 }
 
 #[cfg(test)]
@@ -71,8 +87,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn tilestrings_of_complete_hands_are_valid() {
+        assert_eq!(is_tilestring("111406p33377z789s"), true);
+    }
+
+    #[test]
+    fn tilestrings_of_a_few_tiles_are_valid() {
+        assert_eq!(is_tilestring("111p37z"), true);
+    }
+
+    #[test]
+    fn tilestrings_of_random_text_are_invalid() {
+        assert_eq!(is_tilestring("helloworld"), false);
     }
 }
