@@ -83,6 +83,19 @@ pub fn is_jantou(tiles: &[Pai]) -> bool {
 }
 
 /**
+ * Whether a list of tiles is a three-of-a-kind.
+ */
+pub fn is_koutsu(tiles: &[Pai]) -> bool {
+    if tiles.len() != 3 {
+        return false;
+    }
+    let first = &tiles[0];
+    let second = &tiles[1];
+    let third = &tiles[2];
+    return first == second && first == third;
+}
+
+/**
  * Whether the given candidate is a valid tilestring.
  * m/w/c -> manzu
  * p/d -> pinzu
@@ -121,6 +134,37 @@ mod tests {
         assert_eq!(
             is_jantou(&[tile1, tile2]),
             true
+        );
+    }
+
+    #[test]
+    fn three_north_winds_are_a_triplet() {
+        let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
+        let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
+        let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
+        assert_eq!(
+            is_koutsu(&[tile1, tile2, tile3]),
+            true
+        );
+    }
+
+    #[test]
+    fn three_different_winds_are_a_not_triplet() {
+        let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
+        let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Ton));
+        let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa));
+        assert_eq!(
+            is_koutsu(&[tile1, tile2, tile3]),
+            false
+        );
+    }
+
+    #[test]
+    fn single_tile_is_not_triplet() {
+        let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
+        assert_eq!(
+            is_koutsu(&[tile1]),
+            false
         );
     }
 
