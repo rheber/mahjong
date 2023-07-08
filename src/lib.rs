@@ -3,6 +3,7 @@ use regex::Regex;
 /**
  * A suit.
  */
+#[derive(PartialEq)]
 pub enum Shoku {
     Manzu,
     Pinzu,
@@ -12,6 +13,7 @@ pub enum Shoku {
 /**
  * A wind.
  */
+#[derive(PartialEq)]
 pub enum Kazehai {
     Ton,
     Nan,
@@ -22,6 +24,7 @@ pub enum Kazehai {
 /**
  * A dragon.
  */
+#[derive(PartialEq)]
 pub enum Sangenpai {
     Chun,
     Haku,
@@ -31,6 +34,7 @@ pub enum Sangenpai {
 /**
  * A number tile.
  */
+#[derive(PartialEq)]
 pub struct Suupai {
     /**
      * The suit.
@@ -51,6 +55,7 @@ pub struct Suupai {
 /**
  * An honor tile.
  */
+#[derive(PartialEq)]
 pub enum Jihai {
     Kazehai(Kazehai),
     Sangenpai(Sangenpai),
@@ -59,9 +64,22 @@ pub enum Jihai {
 /**
  * A tile.
  */
+#[derive(PartialEq)]
 pub enum Pai {
     Jihai(Jihai),
     Suupai(Suupai),
+}
+
+/**
+ * Whether a list of tiles is a pair.
+ */
+pub fn is_jantou(tiles: &[Pai]) -> bool {
+    if tiles.len() != 2 {
+        return false;
+    }
+    let first = &tiles[0];
+    let second = &tiles[1];
+    return first == second;
 }
 
 /**
@@ -85,6 +103,36 @@ pub fn is_tilestring(candidate: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn two_red_dragons_are_a_pair() {
+        let tile1 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
+        let tile2 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
+        assert_eq!(
+            is_jantou(&[tile1, tile2]),
+            true
+        );
+    }
+
+    #[test]
+    fn two_threes_of_bamboos_are_a_pair() {
+        let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
+        let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
+        assert_eq!(
+            is_jantou(&[tile1, tile2]),
+            true
+        );
+    }
+
+    #[test]
+    fn two_different_threes_are_not_a_pair() {
+        let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
+        let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false });
+        assert_eq!(
+            is_jantou(&[tile1, tile2]),
+            false
+        );
+    }
 
     #[test]
     fn tilestrings_of_complete_hands_are_valid() {
