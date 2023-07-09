@@ -2,10 +2,12 @@
  * Module that defines pais.
  */
 
+use core::hash::Hash;
+
 /**
  * A suit.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq)]
 pub enum Shoku {
     Manzu,
     Pinzu,
@@ -15,7 +17,7 @@ pub enum Shoku {
 /**
  * A wind.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Kazehai {
     Ton,
     Nan,
@@ -26,7 +28,7 @@ pub enum Kazehai {
 /**
  * A dragon.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Sangenpai {
     Chun,
     Haku,
@@ -36,7 +38,7 @@ pub enum Sangenpai {
 /**
  * A number tile.
  */
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Suupai {
     /**
      * The suit.
@@ -46,12 +48,24 @@ pub struct Suupai {
     /**
      * The rank, a number from 1 through 9.
      */
-    pub rank: i8,
+    pub rank: u8,
 
     /**
      * Whether this tile is a red dora.
      */
     pub akadora: bool,
+}
+
+impl Eq for Suupai {
+
+}
+
+// Manually implement Hash to ignore akadora.
+impl Hash for Suupai {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.shoku.hash(state);
+        self.rank.hash(state);
+    }
 }
 
 // Manually implement PartialEq to ignore akadora.
@@ -64,7 +78,7 @@ impl PartialEq for Suupai {
 /**
  * An honor tile.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Jihai {
     Kazehai(Kazehai),
     Sangenpai(Sangenpai),
@@ -73,7 +87,7 @@ pub enum Jihai {
 /**
  * A tile.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Pai {
     Jihai(Jihai),
     Suupai(Suupai),

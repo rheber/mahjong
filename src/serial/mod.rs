@@ -65,7 +65,7 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
             };
             return Some(Pai::Suupai(Suupai {
                 shoku,
-                rank: if digit == '0' { 5 } else { i8::try_from(digit.to_digit(10).unwrap()).unwrap() },
+                rank: if digit == '0' { 5 } else { u8::try_from(digit.to_digit(10).unwrap()).unwrap() },
                 akadora: digit == '0',
             }));
         }
@@ -84,7 +84,7 @@ mod tests {
         let tile1 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
         let tile2 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
         assert_eq!(
-            is_jantou(&[tile1, tile2]),
+            is_jantou(vec![tile1, tile2]),
             true
         );
     }
@@ -94,7 +94,7 @@ mod tests {
         let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
         let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
         assert_eq!(
-            is_jantou(&[tile1, tile2]),
+            is_jantou(vec![tile1, tile2]),
             true
         );
     }
@@ -105,7 +105,7 @@ mod tests {
         let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         assert_eq!(
-            is_koutsu(&[tile1, tile2, tile3]),
+            is_koutsu(vec![tile1, tile2, tile3]),
             true
         );
     }
@@ -116,7 +116,7 @@ mod tests {
         let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Ton));
         let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa));
         assert_eq!(
-            is_koutsu(&[tile1, tile2, tile3]),
+            is_koutsu(vec![tile1, tile2, tile3]),
             false
         );
     }
@@ -125,7 +125,7 @@ mod tests {
     fn single_tile_is_not_triplet() {
         let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         assert_eq!(
-            is_koutsu(&[tile1]),
+            is_koutsu(vec![tile1]),
             false
         );
     }
@@ -135,7 +135,7 @@ mod tests {
         let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
         let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false });
         assert_eq!(
-            is_jantou(&[tile1, tile2]),
+            is_jantou(vec![tile1, tile2]),
             false
         );
     }
