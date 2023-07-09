@@ -36,7 +36,7 @@ pub enum Sangenpai {
 /**
  * A number tile.
  */
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Suupai {
     /**
      * The suit.
@@ -52,6 +52,13 @@ pub struct Suupai {
      * Whether this tile is a red dora.
      */
     pub akadora: bool,
+}
+
+// Manually implement PartialEq to ignore akadora.
+impl PartialEq for Suupai {
+    fn eq(&self, other: &Self) -> bool {
+        self.shoku == other.shoku && self.rank == other.rank
+    }
 }
 
 /**

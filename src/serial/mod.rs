@@ -7,7 +7,7 @@ use crate::rules::*;
 use regex::Regex;
 
 /**
- * Whether the given candidate is a valid tilestring.
+ * Whether the given candidate is a valid tilestring e.g. 111406p33377z789s.
  * m/w/c -> manzu
  * p/d -> pinzu
  * s/b -> souzu
