@@ -89,49 +89,95 @@ pub fn is_shuntsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
  */
 pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
     // TODO: seven pairs and thirteen orphans
-    // TODO: runs and triplets
+    // TODO: triplets
 
     fn count_pai_in_pais(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> usize {
         ts.into_iter().filter(|t| *t == tile).count()
     }
 
-    fn possible_quad_pais(ts: impl IntoIterator<Item = Pai>) -> impl Iterator<Item = Pai> {
+    fn possible_quad_pais(ts: impl IntoIterator<Item = Pai>) -> impl IntoIterator<Item = Pai> + Clone {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
         let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 4);
         let unique_tiles = unduped_tiles.unique();
         let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
-        unique_vec.into_iter()
+        unique_vec
+    }
+
+    fn possible_trip_pais(ts: impl IntoIterator<Item = Pai>) -> impl IntoIterator<Item = Pai> + Clone {
+        let ts_vec: Vec<Pai> = ts.into_iter().collect();
+        let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 3);
+        let unique_tiles = unduped_tiles.unique();
+        let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+        unique_vec
     }
 
     fn remaining_pais_complete_hand(
         ts: impl IntoIterator<Item = Pai>,
-        possible_quad_tiles: impl IntoIterator<Item = Pai>,
+        possible_quad_tiles: impl IntoIterator<Item = Pai> + Clone,
+        possible_trip_tiles: impl IntoIterator<Item = Pai> + Clone,
         amt_pais_removed: u8, 
         amt_quads_removed: u8
     ) -> bool {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
-        let quad_tiles: Vec<Pai> = possible_quad_tiles.into_iter().collect();
-        match quad_tiles.split_first() {
-            Some((head, tail)) => {
-                let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
-                let tail_vec = tail.to_vec();
-                if remaining_pais_complete_hand(new_tiles, tail_vec.to_owned(), amt_pais_removed + 4, amt_quads_removed + 1) {
-                    return true;
-                }
-                if remaining_pais_complete_hand(ts_vec.to_owned(), tail_vec, amt_pais_removed, amt_quads_removed) {
-                    return true;
-                }
-            },
-            None => {
-                // continue
-            },
+        let quad_tiles: Vec<Pai> = possible_quad_tiles.to_owned().into_iter().collect();
+        if let Some((head, tail)) = quad_tiles.split_first() {
+            let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
+            let tail_vec = tail.to_vec();
+            if remaining_pais_complete_hand(
+                new_tiles,
+                tail_vec.to_owned(),
+                possible_trip_tiles.to_owned(),
+                amt_pais_removed + 4,
+                amt_quads_removed + 1
+            ) {
+                return true;
+            }
+            if remaining_pais_complete_hand(
+                ts_vec.to_owned(),
+                tail_vec,
+                possible_trip_tiles.to_owned(),
+                amt_pais_removed,
+                amt_quads_removed
+            ) {
+                return true;
+            }
+        }
+        let trip_tiles: Vec<Pai> = possible_trip_tiles.into_iter().collect();
+        if let Some((head, tail)) = trip_tiles.split_first() {
+            let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
+            let tail_vec = tail.to_vec();
+            if remaining_pais_complete_hand(
+                new_tiles,
+                possible_quad_tiles.to_owned(),
+                tail_vec.to_owned(),
+                amt_pais_removed + 3,
+                amt_quads_removed
+            ) {
+                return true;
+            }
+            if remaining_pais_complete_hand(
+                ts_vec.to_owned(),
+                possible_quad_tiles,
+                tail_vec,
+                amt_pais_removed,
+                amt_quads_removed
+            ) {
+                return true;
+            }
         }
         return is_jantou(ts_vec) && amt_pais_removed == 12 + amt_quads_removed;
     }
 
     let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
     let possible_quad_tiles = possible_quad_pais(tiles_vec.to_owned());
-    return remaining_pais_complete_hand(tiles_vec, possible_quad_tiles, 0, 0);
+    let possible_trip_tiles = possible_trip_pais(tiles_vec.to_owned());
+    return remaining_pais_complete_hand(
+        tiles_vec,
+        possible_quad_tiles,
+        possible_trip_tiles,
+        0,
+        0
+    );
 }
 
 #[cfg(test)]
@@ -223,6 +269,39 @@ mod tests {
     }
 
     #[test]
+    fn one_tile_is_not_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+            ]),
+            false
+        );
+    }
+
+    #[test]
+    fn fourteen_arbitrary_tiles_are_not_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 5, akadora: true }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
+            ]),
+            false
+        );
+    }
+
+    #[test]
     fn big_four_winds_is_a_complete_hand() {
         assert_eq!(
             is_complete_hand(vec![
@@ -235,6 +314,31 @@ mod tests {
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+            ]),
+            true
+        );
+    }
+
+    #[test]
+    fn all_trips_and_quads_is_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
