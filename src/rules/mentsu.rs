@@ -113,7 +113,7 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
         let quad_tiles: Vec<Pai> = possible_quad_tiles.into_iter().collect();
         match quad_tiles.split_first() {
             Some((head, tail)) => {
-                let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t == *head).collect();
+                let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
                 let tail_vec = tail.to_vec();
                 if remaining_pais_complete_hand(new_tiles, tail_vec.to_owned(), amt_pais_removed + 4, amt_quads_removed + 1) {
                     return true;
