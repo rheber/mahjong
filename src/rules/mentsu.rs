@@ -89,13 +89,39 @@ pub fn is_shuntsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
  */
 pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
     // TODO: seven pairs and thirteen orphans
-    // TODO: triplets
+    // TODO: melded groups
 
     fn count_pai_in_pais(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> usize {
         ts.into_iter().filter(|t| *t == tile).count()
     }
 
-    fn possible_quad_pais(ts: impl IntoIterator<Item = Pai>) -> impl IntoIterator<Item = Pai> + Clone {
+    fn could_start_shunstu(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> bool {
+        match tile {
+            Pai::Jihai(_) => return false,
+            Pai::Suupai(suupai) => {
+                if suupai.rank > 7 {
+                    return false;
+                }
+                let ts_vec: Vec<Pai> = ts.into_iter().collect();
+                let mid = ts_vec.iter().find(|t| if let Pai::Suupai(s) = t {
+                    s.shoku == suupai.shoku && s.rank == suupai.rank + 1
+                } else { false });
+                let high = ts_vec.iter().find(|t| if let Pai::Suupai(s) = t {
+                    s.shoku == suupai.shoku && s.rank == suupai.rank + 2
+                } else { false });
+                return mid.is_some() && high.is_some();
+            },
+        }
+    }
+
+    fn possible_shuntsu_starts(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
+        let ts_vec: Vec<Pai> = ts.into_iter().collect();
+        let starts = ts_vec.iter().filter(|t| could_start_shunstu(**t, ts_vec.to_owned()));
+        let starts_vec: Vec<Pai> = starts.map(|t| t.clone()).collect();
+        starts_vec
+    }
+
+    fn possible_quad_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
         let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 4);
         let unique_tiles = unduped_tiles.unique();
@@ -103,7 +129,7 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
         unique_vec
     }
 
-    fn possible_trip_pais(ts: impl IntoIterator<Item = Pai>) -> impl IntoIterator<Item = Pai> + Clone {
+    fn possible_trip_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
         let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 3);
         let unique_tiles = unduped_tiles.unique();
@@ -111,22 +137,27 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
         unique_vec
     }
 
+    // Whether the remaining pais form a complete hand with the pais put aside.
     fn remaining_pais_complete_hand(
         ts: impl IntoIterator<Item = Pai>,
         possible_quad_tiles: impl IntoIterator<Item = Pai> + Clone,
         possible_trip_tiles: impl IntoIterator<Item = Pai> + Clone,
+        possible_shuntsu_tiles: impl IntoIterator<Item = Pai> + Clone,
         amt_pais_removed: u8, 
         amt_quads_removed: u8
     ) -> bool {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
+
+        // For each quad candidate, try including and omitting it.
         let quad_tiles: Vec<Pai> = possible_quad_tiles.to_owned().into_iter().collect();
         if let Some((head, tail)) = quad_tiles.split_first() {
-            let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
-            let tail_vec = tail.to_vec();
+            let tiles_left_in_hand: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
+            let remaining_quad_candidates = tail.to_vec();
             if remaining_pais_complete_hand(
-                new_tiles,
-                tail_vec.to_owned(),
-                possible_trip_tiles.to_owned(),
+                tiles_left_in_hand,
+                remaining_quad_candidates.to_owned(),
+                possible_trip_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
+                possible_shuntsu_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
                 amt_pais_removed + 4,
                 amt_quads_removed + 1
             ) {
@@ -134,22 +165,26 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
             }
             if remaining_pais_complete_hand(
                 ts_vec.to_owned(),
-                tail_vec,
+                remaining_quad_candidates,
                 possible_trip_tiles.to_owned(),
+                possible_shuntsu_tiles.to_owned(),
                 amt_pais_removed,
                 amt_quads_removed
             ) {
                 return true;
             }
         }
+
+        // For each trip candidate, try including and omitting it.
         let trip_tiles: Vec<Pai> = possible_trip_tiles.into_iter().collect();
         if let Some((head, tail)) = trip_tiles.split_first() {
-            let new_tiles: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
-            let tail_vec = tail.to_vec();
+            let tiles_left_in_hand: Vec<Pai> = ts_vec.to_owned().into_iter().filter(|t| *t != *head).collect();
+            let remaining_trip_candidates = tail.to_vec();
             if remaining_pais_complete_hand(
-                new_tiles,
-                possible_quad_tiles.to_owned(),
-                tail_vec.to_owned(),
+                tiles_left_in_hand.to_owned(),
+                possible_quad_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
+                remaining_trip_candidates.to_owned(),
+                possible_shuntsu_starts(tiles_left_in_hand),
                 amt_pais_removed + 3,
                 amt_quads_removed
             ) {
@@ -158,23 +193,28 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
             if remaining_pais_complete_hand(
                 ts_vec.to_owned(),
                 possible_quad_tiles,
-                tail_vec,
+                possible_shuntsu_tiles.to_owned(),
+                remaining_trip_candidates,
                 amt_pais_removed,
                 amt_quads_removed
             ) {
                 return true;
             }
         }
+
+
         return is_jantou(ts_vec) && amt_pais_removed == 12 + amt_quads_removed;
     }
 
     let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
     let possible_quad_tiles = possible_quad_pais(tiles_vec.to_owned());
     let possible_trip_tiles = possible_trip_pais(tiles_vec.to_owned());
+    let possible_shuntsu_tiles = possible_shuntsu_starts(tiles_vec.to_owned());
     return remaining_pais_complete_hand(
         tiles_vec,
         possible_quad_tiles,
         possible_trip_tiles,
+        possible_shuntsu_tiles,
         0,
         0
     );

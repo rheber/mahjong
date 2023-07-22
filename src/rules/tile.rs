@@ -7,7 +7,7 @@ use core::hash::Hash;
 /**
  * A suit.
  */
-#[derive(Clone, Copy, Debug, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shoku {
     Manzu,
     Pinzu,
@@ -38,7 +38,7 @@ pub enum Sangenpai {
 /**
  * A number tile.
  */
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq)]
 pub struct Suupai {
     /**
      * The suit.
@@ -54,10 +54,6 @@ pub struct Suupai {
      * Whether this tile is a red dora.
      */
     pub akadora: bool,
-}
-
-impl Eq for Suupai {
-
 }
 
 // Manually implement Hash to ignore akadora.
