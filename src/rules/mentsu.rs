@@ -85,15 +85,57 @@ pub fn is_shuntsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
 }
 
 /**
+ * Amount of times that the given tile repeats in the collection of tiles.
+ */
+fn count_repeats_of_pai(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> usize {
+    ts.into_iter().filter(|t| *t == tile).count()
+}
+
+
+/**
+ * Whether a hand is seven pairs.
+ */
+fn is_chiitoitsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
+    // TODO: Option to disallow quads as two pairs.
+    return false;
+}
+
+/**
+ * Whether a hand is thirteen orphans.
+ */
+fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
+    fn possible_pair_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
+        let ts_vec: Vec<Pai> = ts.into_iter().collect();
+        let unduped_tiles = ts_vec.iter().filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 2);
+        let unique_tiles = unduped_tiles.unique();
+        let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+        unique_vec
+    }
+
+    let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
+    if tiles_vec.len() != 14 { return false; }
+    if possible_pair_pais(tiles_vec.to_owned()).len() != 1 { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Kazehai(Kazehai::Ton))) { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Kazehai(Kazehai::Nan))) { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa))) { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Kazehai(Kazehai::Pei))) { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun))){  return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Sangenpai(Sangenpai::Haku))) { return false; }
+    if !tiles_vec.contains(&Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu))) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false })) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 9, akadora: false })) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 1, akadora: false })) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false })) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 1, akadora: false })) { return false; }
+    if !tiles_vec.contains(&Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false })) { return false; }
+    return true;
+}
+
+/**
  * Whether a collection of tiles is a complete hand.
  */
 pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
-    // TODO: seven pairs and thirteen orphans
     // TODO: melded groups
-
-    fn count_pai_in_pais(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> usize {
-        ts.into_iter().filter(|t| *t == tile).count()
-    }
 
     fn could_start_shunstu(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> bool {
         match tile {
@@ -147,7 +189,7 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
 
     fn possible_quad_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
-        let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 4);
+        let unduped_tiles = ts_vec.iter().filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 4);
         let unique_tiles = unduped_tiles.unique();
         let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
         unique_vec
@@ -155,7 +197,7 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
 
     fn possible_trip_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
-        let unduped_tiles = ts_vec.iter().filter(|t| count_pai_in_pais(**t, ts_vec.to_owned()) == 3);
+        let unduped_tiles = ts_vec.iter().filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 3);
         let unique_tiles = unduped_tiles.unique();
         let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
         unique_vec
@@ -261,11 +303,13 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
             }
         }
 
-        println!("check");
         return is_jantou(ts_vec) && amt_pais_removed == 12 + amt_quads_removed;
     }
 
     let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
+    if is_chiitoitsu(tiles_vec.to_owned()) || is_kokushi_musou(tiles_vec.to_owned()) {
+        return true;
+    }
     let possible_quad_tiles = possible_quad_pais(tiles_vec.to_owned());
     let possible_trip_tiles = possible_trip_pais(tiles_vec.to_owned());
     let possible_shuntsu_tiles = possible_shuntsu_starts(tiles_vec.to_owned());
@@ -397,6 +441,29 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
             ]),
             false
+        );
+    }
+
+    #[test]
+    fn thirteen_orphans_is_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Haku)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu)),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 9, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 1, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 1, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }),
+            ]),
+            true
         );
     }
 
