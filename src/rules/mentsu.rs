@@ -91,27 +91,29 @@ fn count_repeats_of_pai(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> usize {
     ts.into_iter().filter(|t| *t == tile).count()
 }
 
+fn possible_pair_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
+    let ts_vec: Vec<Pai> = ts.into_iter().collect();
+    let unduped_tiles = ts_vec.iter().filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 2);
+    let unique_tiles = unduped_tiles.unique();
+    let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+    unique_vec
+}
 
 /**
  * Whether a hand is seven pairs.
  */
 fn is_chiitoitsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
-    // TODO: Option to disallow quads as two pairs.
-    return false;
+    // TODO: Option to allow quads as two pairs.
+    let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
+    if tiles_vec.len() != 14 { return false; }
+    if possible_pair_pais(tiles_vec.to_owned()).len() != 7 { return false; }
+    return true;
 }
 
 /**
  * Whether a hand is thirteen orphans.
  */
 fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
-    fn possible_pair_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
-        let ts_vec: Vec<Pai> = ts.into_iter().collect();
-        let unduped_tiles = ts_vec.iter().filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 2);
-        let unique_tiles = unduped_tiles.unique();
-        let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
-        unique_vec
-    }
-
     let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
     if tiles_vec.len() != 14 { return false; }
     if possible_pair_pais(tiles_vec.to_owned()).len() != 1 { return false; }
@@ -462,6 +464,29 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 1, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }),
+            ]),
+            true
+        );
+    }
+
+    #[test]
+    fn seven_pairs_is_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Nan)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu)),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
             ]),
             true
         );
