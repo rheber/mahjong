@@ -20,10 +20,7 @@ use regex::Regex;
  */
 pub fn is_tilestring(candidate: &str) -> bool {
     let re = Regex::new(r"^(([0-9]+[mwcpdsb])|([1-7]+[zh]))*$").unwrap();
-    return match re.captures(candidate) {
-        Some(_) => true,
-        None => false,
-    };
+    re.captures(candidate).is_some()
 }
 
 /**
@@ -49,14 +46,14 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
         let (digit, letter) = dl;
         if letter == 'z' || letter == 'h' {
             match digit {
-                '1' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Ton))),
-                '2' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Nan))),
-                '3' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa))),
-                '4' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Pei))),
-                '5' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun))),
-                '6' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Haku))),
-                '7' => return Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu))),
-                _ => return None,
+                '1' => Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Ton))),
+                '2' => Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Nan))),
+                '3' => Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa))),
+                '4' => Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Pei))),
+                '5' => Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun))),
+                '6' => Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Haku))),
+                '7' => Some(Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu))),
+                _ => None,
             }
         } else {
             let shoku = match letter {
@@ -65,7 +62,7 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
                 's' | 'b' => Shoku::Souzu,
                 _ => return None,
             };
-            return Some(Pai::Suupai(Suupai {
+            Some(Pai::Suupai(Suupai {
                 shoku,
                 rank: if digit == '0' {
                     5
@@ -73,14 +70,14 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
                     u8::try_from(digit.to_digit(10).unwrap()).unwrap()
                 },
                 akadora: digit == '0',
-            }));
+            }))
         }
     }
 
     let pais: Vec<Pai> = clump_pairs
         .map(|dl| clump_pair_to_pai(dl).unwrap())
         .collect();
-    return Some(pais);
+    Some(pais)
 }
 
 #[cfg(test)]

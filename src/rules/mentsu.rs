@@ -46,7 +46,7 @@ pub fn is_jantou(tiles: impl IntoIterator<Item = Pai>) -> bool {
     }
     let first = tiles_vec[0];
     let second = tiles_vec[1];
-    return first == second;
+    first == second
 }
 
 /**
@@ -61,7 +61,7 @@ pub fn is_kantsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
     let second = tiles_vec[1];
     let third = tiles_vec[2];
     let fourth = tiles_vec[3];
-    return first == second && first == third && first == fourth;
+    first == second && first == third && first == fourth
 }
 
 /**
@@ -75,7 +75,7 @@ pub fn is_koutsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
     let first = tiles_vec[0];
     let second = tiles_vec[1];
     let third = tiles_vec[2];
-    return first == second && first == third;
+    first == second && first == third
 }
 
 /**
@@ -91,18 +91,18 @@ pub fn is_shuntsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
     let third = tiles_vec[2];
 
     match first {
-        Pai::Jihai(_) => return false,
+        Pai::Jihai(_) => false,
         Pai::Suupai(tile1) => match second {
-            Pai::Jihai(_) => return false,
+            Pai::Jihai(_) => false,
             Pai::Suupai(tile2) => match third {
-                Pai::Jihai(_) => return false,
+                Pai::Jihai(_) => false,
                 Pai::Suupai(tile3) => {
                     if tile1.shoku != tile2.shoku || tile1.shoku != tile3.shoku {
                         return false;
                     }
                     let mut ranks = [tile1.rank, tile2.rank, tile3.rank];
                     ranks.sort();
-                    return ranks[0] + 1 == ranks[1] && ranks[1] + 1 == ranks[2];
+                    ranks[0] + 1 == ranks[1] && ranks[1] + 1 == ranks[2]
                 }
             },
         },
@@ -122,7 +122,7 @@ fn possible_pair_pais(ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         .iter()
         .filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 2);
     let unique_tiles = unduped_tiles.unique();
-    let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+    let unique_vec: Vec<Pai> = unique_tiles.copied().collect();
     unique_vec
 }
 
@@ -135,10 +135,10 @@ fn is_chiitoitsu(tiles: impl IntoIterator<Item = Pai>) -> bool {
     if tiles_vec.len() != 14 {
         return false;
     }
-    if possible_pair_pais(tiles_vec.to_owned()).len() != 7 {
+    if possible_pair_pais(tiles_vec).len() != 7 {
         return false;
     }
-    return true;
+    true
 }
 
 /**
@@ -215,7 +215,7 @@ fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
     })) {
         return false;
     }
-    return true;
+    true
 }
 
 /**
@@ -229,7 +229,7 @@ fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
 pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8) -> bool {
     fn could_start_shunstu(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> bool {
         match tile {
-            Pai::Jihai(_) => return false,
+            Pai::Jihai(_) => false,
             Pai::Suupai(suupai) => {
                 if suupai.rank > 7 {
                     return false;
@@ -249,7 +249,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
                         false
                     }
                 });
-                return mid.is_some() && high.is_some();
+                mid.is_some() && high.is_some()
             }
         }
     }
@@ -257,7 +257,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
     fn remove_shuntsu(start: Pai, ts: impl IntoIterator<Item = Pai>) -> Vec<Pai> {
         if let Pai::Suupai(suupai) = start {
             let mut ts_vec: Vec<Pai> = ts.into_iter().collect();
-            let low_index = ts_vec.to_owned().into_iter().position(|t| t == start);
+            let low_index = ts_vec.iter().copied().position(|t| t == start);
             ts_vec.remove(low_index.unwrap());
             let mid_index = ts_vec.to_owned().into_iter().position(|t| {
                 t == Pai::Suupai(Suupai {
@@ -287,7 +287,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
             .iter()
             .filter(|t| could_start_shunstu(**t, ts_vec.to_owned()));
         let starts_unique = starts.unique();
-        let starts_vec: Vec<Pai> = starts_unique.map(|t| t.clone()).collect();
+        let starts_vec: Vec<Pai> = starts_unique.copied().collect();
         starts_vec
     }
 
@@ -297,7 +297,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
             .iter()
             .filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 4);
         let unique_tiles = unduped_tiles.unique();
-        let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+        let unique_vec: Vec<Pai> = unique_tiles.copied().collect();
         unique_vec
     }
 
@@ -307,7 +307,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
             .iter()
             .filter(|t| count_repeats_of_pai(**t, ts_vec.to_owned()) == 3);
         let unique_tiles = unduped_tiles.unique();
-        let unique_vec: Vec<Pai> = unique_tiles.map(|t| t.clone()).collect();
+        let unique_vec: Vec<Pai> = unique_tiles.copied().collect();
         unique_vec
     }
 
@@ -398,7 +398,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
             let remaining_shuntsu_candidates: Vec<Pai> = tail
                 .iter()
                 .filter(|t| could_start_shunstu(**t, tiles_left_in_hand.to_owned()))
-                .map(|t| *t)
+                .copied()
                 .collect();
             let first_case_candidates: Vec<Pai> =
                 if could_start_shunstu(*head, tiles_left_in_hand.to_owned()) {
@@ -421,7 +421,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
                     .into_iter()
                     .filter(|t| tiles_left_in_hand.contains(t))
                     .collect_vec(),
-                first_case_candidates.to_owned(),
+                first_case_candidates,
                 amt_melds + 1,
             ) {
                 return true;
@@ -437,7 +437,7 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
             }
         }
 
-        return is_jantou(ts_vec) && amt_melds == 4;
+        is_jantou(ts_vec) && amt_melds == 4
     }
 
     let tiles_vec: Vec<Pai> = free_tiles.into_iter().collect();
@@ -447,13 +447,13 @@ pub fn is_complete_hand(free_tiles: impl IntoIterator<Item = Pai>, amt_melds: u8
     let possible_quad_tiles = possible_quad_pais(tiles_vec.to_owned());
     let possible_trip_tiles = possible_trip_pais(tiles_vec.to_owned());
     let possible_shuntsu_tiles = possible_shuntsu_starts(tiles_vec.to_owned());
-    return remaining_pais_complete_hand(
+    remaining_pais_complete_hand(
         tiles_vec,
         possible_quad_tiles,
         possible_trip_tiles,
         possible_shuntsu_tiles,
         amt_melds,
-    );
+    )
 }
 
 #[cfg(test)]
