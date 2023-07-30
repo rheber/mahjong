@@ -165,10 +165,15 @@ fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
 
 /**
  * Whether a collection of tiles is a complete hand.
+ *
+ * # Arguments
+ *
+ * * `free_tiles`: The tiles that have not been committed to melds.
+ * * `amt_melds`: The amount of melds that have been made so far.
  */
 pub fn is_complete_hand(
     free_tiles: impl IntoIterator<Item = Pai>,
-    melds: impl IntoIterator<Item = Meld>,
+    amt_melds: u8,
 ) -> bool {
     fn could_start_shunstu(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> bool {
         match tile {
@@ -242,8 +247,7 @@ pub fn is_complete_hand(
         possible_quad_tiles: impl IntoIterator<Item = Pai> + Clone,
         possible_trip_tiles: impl IntoIterator<Item = Pai> + Clone,
         possible_shuntsu_tiles: impl IntoIterator<Item = Pai> + Clone,
-        amt_pais_removed: u8, 
-        amt_quads_removed: u8
+        amt_melds: u8,
     ) -> bool {
         let ts_vec: Vec<Pai> = ts.into_iter().collect();
 
@@ -257,8 +261,7 @@ pub fn is_complete_hand(
                 remaining_quad_candidates.to_owned(),
                 possible_trip_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
                 possible_shuntsu_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
-                amt_pais_removed + 4,
-                amt_quads_removed + 1
+                amt_melds + 1,
             ) {
                 return true;
             }
@@ -267,8 +270,7 @@ pub fn is_complete_hand(
                 remaining_quad_candidates,
                 possible_trip_tiles.to_owned(),
                 possible_shuntsu_tiles.to_owned(),
-                amt_pais_removed,
-                amt_quads_removed
+                amt_melds,
             ) {
                 return true;
             }
@@ -284,8 +286,7 @@ pub fn is_complete_hand(
                 possible_quad_tiles.to_owned().into_iter().filter(|t| *t != *head).collect_vec(),
                 remaining_trip_candidates.to_owned(),
                 possible_shuntsu_starts(tiles_left_in_hand),
-                amt_pais_removed + 3,
-                amt_quads_removed
+                amt_melds + 1,
             ) {
                 return true;
             }
@@ -294,8 +295,7 @@ pub fn is_complete_hand(
                 possible_quad_tiles.to_owned(),
                 remaining_trip_candidates,
                 possible_shuntsu_tiles.to_owned(),
-                amt_pais_removed,
-                amt_quads_removed
+                amt_melds,
             ) {
                 return true;
             }
@@ -319,8 +319,7 @@ pub fn is_complete_hand(
                 possible_quad_tiles.to_owned().into_iter().filter(|t| tiles_left_in_hand.contains(t)).collect_vec(),
                 possible_trip_tiles.to_owned().into_iter().filter(|t| tiles_left_in_hand.contains(t)).collect_vec(),
                 first_case_candidates.to_owned(),
-                amt_pais_removed + 3,
-                amt_quads_removed
+                amt_melds + 1,
             ) {
                 return true;
             }
@@ -329,14 +328,13 @@ pub fn is_complete_hand(
                 possible_quad_tiles,
                 possible_trip_tiles,
                 remaining_shuntsu_candidates,
-                amt_pais_removed,
-                amt_quads_removed
+                amt_melds,
             ) {
                 return true;
             }
         }
 
-        return is_jantou(ts_vec) && amt_pais_removed == 12 + amt_quads_removed;
+        return is_jantou(ts_vec) && amt_melds == 4;
     }
 
     let tiles_vec: Vec<Pai> = free_tiles.into_iter().collect();
@@ -351,8 +349,7 @@ pub fn is_complete_hand(
         possible_quad_tiles,
         possible_trip_tiles,
         possible_shuntsu_tiles,
-        0,
-        0
+        amt_melds,
     );
 }
 
@@ -449,7 +446,7 @@ mod tests {
         assert_eq!(
             is_complete_hand(vec![
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
-            ], vec![]),
+            ], 0),
             false
         );
     }
@@ -472,7 +469,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
-            ], vec![]),
+            ], 0),
             false
         );
     }
@@ -495,7 +492,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 1, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }),
-            ], vec![]),
+            ], 0),
             true
         );
     }
@@ -518,7 +515,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
-            ], vec![]),
+            ], 0),
             true
         );
     }
@@ -545,7 +542,7 @@ mod tests {
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
-            ], vec![]),
+            ], 0),
             true
         );
     }
@@ -570,7 +567,7 @@ mod tests {
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
-            ], vec![]),
+            ], 0),
             true
         );
     }
@@ -593,7 +590,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 4, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 3, akadora: false }),
-            ], vec![]),
+            ], 0),
             true
         );
     }
@@ -617,7 +614,38 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
-            ], vec![]),
+            ], 0),
+            true
+        );
+    }
+
+    #[test]
+    fn mix_of_sets_and_sequences_including_a_meld_is_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 4, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 2, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
+                Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
+            ], 1),
+            true
+        );
+    }
+
+    #[test]
+    fn lone_pair_and_four_melds_is_a_complete_hand() {
+        assert_eq!(
+            is_complete_hand(vec![
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+                Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
+            ], 4),
             true
         );
     }
