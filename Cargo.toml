@@ -6,7 +6,7 @@ repository = "https://github.com/rheber/mahjong"
 version = "0.1.0"
 edition = "2021"
 license = "LGPL-3.0-or-later"
-categories = ["game-develpoment"]
+categories = ["game-development"]
 keywords = ["riichi", "mahjong", "game"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
