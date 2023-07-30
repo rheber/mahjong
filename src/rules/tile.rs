@@ -1,5 +1,5 @@
 /*!
- * Module that defines pais.
+ * Types that implement pais.
  */
 
 use core::hash::Hash;

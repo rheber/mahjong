@@ -1,5 +1,5 @@
 /*!
- * Module for checking whether a collection of pais is a mentsu.
+ * Functions for checking whether a collection of pais is a mentsu.
  */
 
 use crate::*;

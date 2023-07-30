@@ -1,5 +1,5 @@
 /*!
- * Module for serialization and deserialization functions.
+ * Functions for serialization and deserialization.
  */
 
 use crate::rules::*;
@@ -8,13 +8,15 @@ use regex::Regex;
 
 /**
  * Whether the given candidate is a valid tilestring e.g. 111406p33377z789s.
- * m/w/c -> manzu
- * p/d -> pinzu
- * s/b -> souzu
- * z/h -> jihai
- * 0 -> red five
- * 1z -> ton
- * 5z -> chun
+ *
+ * # Conventions
+ * * m/w/c -> manzu
+ * * p/d -> pinzu
+ * * s/b -> souzu
+ * * z/h -> jihai
+ * * 0 -> red five
+ * * 1z -> ton
+ * * 5z -> chun
  */
 pub fn is_tilestring(candidate: &str) -> bool {
     let re = Regex::new(r"^(([0-9]+[mwcpdsb])|([1-7]+[zh]))*$").unwrap();

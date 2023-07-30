@@ -1,5 +1,5 @@
 /*!
- * A library of functions relating to the game of mahjong, particulary riichi mahjong.
+ * Functionality relating to the game of mahjong, particulary riichi mahjong.
  */
 
 pub mod rules;
