@@ -2,6 +2,9 @@
  * Functions for checking whether a collection of pais is a mentsu.
  */
 
+// At time of writing, this lint suggests an incorrect refactoring.
+#![allow(clippy::unnecessary_to_owned)]
+
 use crate::*;
 
 use itertools::Itertools;
