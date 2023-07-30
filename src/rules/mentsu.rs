@@ -7,6 +7,36 @@ use crate::*;
 use itertools::Itertools;
 
 /**
+ * A tile group.
+ */
+pub enum Mentsu {
+    Kantsu,
+    Koutsu,
+    Shuntsu,
+}
+
+/**
+ * A group whose tiles have been committed by a call.
+ */
+pub struct Meld {
+    /**
+     * The type of meld.
+     */
+    pub mentsu: Mentsu,
+
+    /**
+     * For sets, this is the tile that is represented.
+     * For sequences, this is the lowest rank tile that is represented.
+     */
+    pub tile: Pai,
+
+    /**
+     * Whether any of the represented tiles is a red dora.
+     */
+    pub akadora: bool,
+}
+
+/**
  * Whether a collection of tiles is a pair.
  */
 pub fn is_jantou(tiles: impl IntoIterator<Item = Pai>) -> bool {
@@ -136,9 +166,10 @@ fn is_kokushi_musou(tiles: impl IntoIterator<Item = Pai>) -> bool {
 /**
  * Whether a collection of tiles is a complete hand.
  */
-pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
-    // TODO: melded groups
-
+pub fn is_complete_hand(
+    free_tiles: impl IntoIterator<Item = Pai>,
+    melds: impl IntoIterator<Item = Meld>,
+) -> bool {
     fn could_start_shunstu(tile: Pai, ts: impl IntoIterator<Item = Pai>) -> bool {
         match tile {
             Pai::Jihai(_) => return false,
@@ -308,7 +339,7 @@ pub fn is_complete_hand(tiles: impl IntoIterator<Item = Pai>) -> bool {
         return is_jantou(ts_vec) && amt_pais_removed == 12 + amt_quads_removed;
     }
 
-    let tiles_vec: Vec<Pai> = tiles.into_iter().collect();
+    let tiles_vec: Vec<Pai> = free_tiles.into_iter().collect();
     if is_chiitoitsu(tiles_vec.to_owned()) || is_kokushi_musou(tiles_vec.to_owned()) {
         return true;
     }
@@ -418,7 +449,7 @@ mod tests {
         assert_eq!(
             is_complete_hand(vec![
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Ton)),
-            ]),
+            ], vec![]),
             false
         );
     }
@@ -441,7 +472,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
-            ]),
+            ], vec![]),
             false
         );
     }
@@ -464,7 +495,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 1, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }),
-            ]),
+            ], vec![]),
             true
         );
     }
@@ -487,7 +518,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 1, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 9, akadora: false }),
-            ]),
+            ], vec![]),
             true
         );
     }
@@ -514,7 +545,7 @@ mod tests {
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
-            ]),
+            ], vec![]),
             true
         );
     }
@@ -539,7 +570,7 @@ mod tests {
                 Pai::Jihai(Jihai::Kazehai(Kazehai::Pei)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
                 Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun)),
-            ]),
+            ], vec![]),
             true
         );
     }
@@ -562,7 +593,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 4, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 3, akadora: false }),
-            ]),
+            ], vec![]),
             true
         );
     }
@@ -586,7 +617,7 @@ mod tests {
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 7, akadora: false }),
                 Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 6, akadora: false }),
-            ]),
+            ], vec![]),
             true
         );
     }
