@@ -46,7 +46,7 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
     let clump_pairs = clump_pair_lists.flatten();
 
     fn clump_pair_to_pai(dl: (char, char)) -> Option<Pai> {
-        let (digit, letter) = dl; 
+        let (digit, letter) = dl;
         if letter == 'z' || letter == 'h' {
             match digit {
                 '1' => return Some(Pai::Jihai(Jihai::Kazehai(Kazehai::Ton))),
@@ -67,13 +67,19 @@ pub fn tilestring_to_pais(tilestring: &str) -> Option<Vec<Pai>> {
             };
             return Some(Pai::Suupai(Suupai {
                 shoku,
-                rank: if digit == '0' { 5 } else { u8::try_from(digit.to_digit(10).unwrap()).unwrap() },
+                rank: if digit == '0' {
+                    5
+                } else {
+                    u8::try_from(digit.to_digit(10).unwrap()).unwrap()
+                },
                 akadora: digit == '0',
             }));
         }
     }
 
-    let pais: Vec<Pai> = clump_pairs.map(|dl| clump_pair_to_pai(dl).unwrap()).collect();
+    let pais: Vec<Pai> = clump_pairs
+        .map(|dl| clump_pair_to_pai(dl).unwrap())
+        .collect();
     return Some(pais);
 }
 
@@ -85,20 +91,22 @@ mod tests {
     fn two_red_dragons_are_a_pair() {
         let tile1 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
         let tile2 = Pai::Jihai(Jihai::Sangenpai(Sangenpai::Chun));
-        assert_eq!(
-            is_jantou(vec![tile1, tile2]),
-            true
-        );
+        assert_eq!(is_jantou(vec![tile1, tile2]), true);
     }
 
     #[test]
     fn two_threes_of_bamboos_are_a_pair() {
-        let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
-        let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
-        assert_eq!(
-            is_jantou(vec![tile1, tile2]),
-            true
-        );
+        let tile1 = Pai::Suupai(Suupai {
+            shoku: Shoku::Souzu,
+            rank: 3,
+            akadora: false,
+        });
+        let tile2 = Pai::Suupai(Suupai {
+            shoku: Shoku::Souzu,
+            rank: 3,
+            akadora: false,
+        });
+        assert_eq!(is_jantou(vec![tile1, tile2]), true);
     }
 
     #[test]
@@ -106,10 +114,7 @@ mod tests {
         let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
-        assert_eq!(
-            is_koutsu(vec![tile1, tile2, tile3]),
-            true
-        );
+        assert_eq!(is_koutsu(vec![tile1, tile2, tile3]), true);
     }
 
     #[test]
@@ -117,29 +122,28 @@ mod tests {
         let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
         let tile2 = Pai::Jihai(Jihai::Kazehai(Kazehai::Ton));
         let tile3 = Pai::Jihai(Jihai::Kazehai(Kazehai::Shaa));
-        assert_eq!(
-            is_koutsu(vec![tile1, tile2, tile3]),
-            false
-        );
+        assert_eq!(is_koutsu(vec![tile1, tile2, tile3]), false);
     }
 
     #[test]
     fn single_tile_is_not_triplet() {
         let tile1 = Pai::Jihai(Jihai::Kazehai(Kazehai::Pei));
-        assert_eq!(
-            is_koutsu(vec![tile1]),
-            false
-        );
+        assert_eq!(is_koutsu(vec![tile1]), false);
     }
 
     #[test]
     fn two_different_threes_are_not_a_pair() {
-        let tile1 = Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 3, akadora: false });
-        let tile2 = Pai::Suupai(Suupai { shoku: Shoku::Manzu, rank: 3, akadora: false });
-        assert_eq!(
-            is_jantou(vec![tile1, tile2]),
-            false
-        );
+        let tile1 = Pai::Suupai(Suupai {
+            shoku: Shoku::Souzu,
+            rank: 3,
+            akadora: false,
+        });
+        let tile2 = Pai::Suupai(Suupai {
+            shoku: Shoku::Manzu,
+            rank: 3,
+            akadora: false,
+        });
+        assert_eq!(is_jantou(vec![tile1, tile2]), false);
     }
 
     #[test]
@@ -161,9 +165,30 @@ mod tests {
     fn converts_tilestrings_to_pais() {
         let pais = tilestring_to_pais("111406p33377z789s").unwrap();
         assert_eq!(pais.len(), 14);
-        assert_eq!(pais[0], Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 1, akadora: false }));
-        assert_eq!(pais[4], Pai::Suupai(Suupai { shoku: Shoku::Pinzu, rank: 5, akadora: true }));
+        assert_eq!(
+            pais[0],
+            Pai::Suupai(Suupai {
+                shoku: Shoku::Pinzu,
+                rank: 1,
+                akadora: false
+            })
+        );
+        assert_eq!(
+            pais[4],
+            Pai::Suupai(Suupai {
+                shoku: Shoku::Pinzu,
+                rank: 5,
+                akadora: true
+            })
+        );
         assert_eq!(pais[10], Pai::Jihai(Jihai::Sangenpai(Sangenpai::Hatsu)));
-        assert_eq!(pais[13], Pai::Suupai(Suupai { shoku: Shoku::Souzu, rank: 9, akadora: false }));
+        assert_eq!(
+            pais[13],
+            Pai::Suupai(Suupai {
+                shoku: Shoku::Souzu,
+                rank: 9,
+                akadora: false
+            })
+        );
     }
 }
